@@ -1,5 +1,5 @@
 Name:                pappy
-Version:             0.1.0.2
+Version:             0.1.0.3
 Synopsis:            Packrat parsing; linear-time parsers for grammars in TDPL.
 Description:         Packrat parsing is a novel and practical
                      method for implementing linear-time parsers
@@ -87,4 +87,5 @@ Executable pappy
                      MemoAnalysis,
                      WriteParser
      Hs-source-dirs: src
+     ghc-options:  -Wall
      Build-depends:  base >= 4 && < 5

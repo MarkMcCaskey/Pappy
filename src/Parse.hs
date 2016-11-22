@@ -35,6 +35,61 @@ infixl 2 </>            -- ordered choice
 infixl 1 <?>            -- error labeling
 infixl 1 <?!>           -- unconditional error labeling
 
+{-
+- I wonder if the implementations of fmap/applicative actually matters if
+- they're not used.  Either way, this code should be considered unsafe until
+- a proper examination and implementation of them is done.
+-}
+
+--  
+
+instance Derivs d => Functor (Parser d) where
+
+  fmap f (Parser p1) = Parser parse
+
+    where parse dvs = first (p1 dvs)
+          
+          first (Parsed val rem err) = Parsed (f val) rem err
+    -- This probably violates the functor laws (not sure what to do here)
+          first (NoParse x)          = NoParse x
+  
+-- Standard Applicative combinators
+instance Derivs d => Applicative (Parser d) where
+
+  -- Copied from return
+  pure x = Parser (\dvs -> Parsed x dvs (nullError dvs))
+
+  -- Copied from >>=
+  -- a :: Parser d (a -> b)
+  -- b :: Parser d a
+  -- return type should be Parser d b
+  {-
+Not sure if this is correct, but this applies parser p2, then applies parser p1 to its output
+and then applies the function obtained from p1's val to p2's val, wrapping it all in a Parsed
+value
+-}
+  (Parser p1) <*> (Parser p2) =  Parser parse
+    where parse dvs = case b of
+                        (Parsed val rem err) ->
+                          case a of
+                            (Parsed val' rem' err') -> Parsed (val' val) rem' (joinErrors err err')
+                            (NoParse err')          -> NoParse (joinErrors err err')
+                            where a = (p1 rem)
+                        (NoParse err)        -> NoParse err
+            where b = (p2 dvs)
+
+  {-
+    where parse dvs = first (f p1)
+          
+          first (Parsed val rem err) = Parsed (f val) rem err
+          first (NoParse err) = NoParse err
+          second err1 (Parsed val rem err) =
+            Parsed val rem (joinErrors err1 err)
+          second err1 (NoParse err) =
+            NoParse (joinErrors err1 err)
+-}
+
+
 -- Standard monadic combinators
 instance Derivs d => Monad (Parser d) where 
 
